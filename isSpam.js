@@ -27,9 +27,9 @@ const isSpamClass = (function () {
 
 			return fetch(request)
 				.then((res) => {
-					console.log("fetch with" + follow);
 					const nextUrl = res.headers.get("Location");
 
+					// redirect if condition meet else return text
 					return (res.status === 302 || res.status === 301) &&
 						follow < this.redirectionDepth
 						? this.req(nextUrl, follow + 1)
@@ -37,12 +37,14 @@ const isSpamClass = (function () {
 				})
 				.then((text) => {
 					this.data = text;
+					// extract anchor href url and spam check
 					this.extractAnchorHrefWithSpam(this.data);
 
 					return this.data;
 				});
 		},
 
+		// spam check method
 		isSpam(url) {
 			try {
 				const domain = new URL(url).host;
@@ -116,8 +118,6 @@ fa
 
 http://@@#:w
 `,
-	["github.com", "www.naver.com"],
-	1
+	["docs.github.com", "www.naver.com"],
+	3
 );
-
-// http://test.com https://testsetset.setestset.setsetst.com
