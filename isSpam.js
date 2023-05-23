@@ -37,18 +37,29 @@ const isSpamClass = (function () {
 				})
 				.then((text) => {
 					this.data = text;
+					this.extractAnchorHrefWithSpam(this.data);
+
 					return this.data;
 				});
 		},
 
 		isSpam(url) {
-			const domain = new URL(url).host;
+			try {
+				const domain = new URL(url).host;
 
-			if (this.spamLinkDomains.includes(domain)) this.result = true;
+				if (this.spamLinkDomains.includes(domain)) this.result = true;
+			} catch {}
+		},
+
+		extractAnchorHrefWithSpam(html) {
+			const anchorRegex = /<a[^>]+href=\"(.*?)\"[^>]*>/g;
+
+			for (const match of html.matchAll(anchorRegex)) {
+				this.isSpam(match[1]);
+			}
 		},
 
 		async reqAll() {
-			console.log(this.urls);
 			return Promise.all(this.urls.map((v) => this.req(v)));
 		},
 
@@ -105,7 +116,7 @@ fa
 
 http://@@#:w
 `,
-	["moiming.page.link"],
+	["github.com", "www.naver.com"],
 	1
 );
 
