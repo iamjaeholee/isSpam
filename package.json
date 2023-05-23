@@ -1,0 +1,13 @@
+{
+  "name": "isspam",
+  "version": "1.0.0",
+  "description": "spam check",
+  "main": "isSpam.js",
+  "scripts": {
+    "dev": "node isSpam.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "module"
+}
