@@ -5,8 +5,8 @@ const isSpamClass = (function () {
 		this.content = content;
 		this.spamLinkDomains = spamLinkDomains;
 		this.redirectionDepth = redirectionDepth;
-		this.hasNext = false;
 		this.urlRegex = new RegExp("http(s?)\\:\\/\\/\\S+", "g");
+		this.result = false;
 	}
 
 	isSpamClass.prototype = {
@@ -18,19 +18,26 @@ const isSpamClass = (function () {
 			console.log(this.urls);
 		},
 
-		async req() {
+		async req(url, follow = 0) {
 			// manually redirect
-			const request = new Request(this.content, { redirect: "manual" });
+			const request = new Request(url, { redirect: follow });
+			// hasNext:boolean, nextUrl: string, data: string
+			const isSpamData = [];
 
 			return fetch(request)
 				.then((res) => {
-					if (res.status === 302 || res.tatus === 301) this.hasNext = true;
+					isSpamData.push(res.status === 302 || res.status === 301);
+					console.log(res.body);
 					return res.text();
 				})
 				.then((text) => {
 					this.data = text;
 					return this.data;
 				});
+		},
+
+		async reqAll() {
+			return Promise.all(this.urls.map((v) => this.req(v)));
 		},
 
 		urlsFromContent() {
@@ -47,6 +54,14 @@ const isSpamClass = (function () {
 				return false;
 			}
 		},
+
+		async check() {
+			this.urlsFromContent();
+			await this.reqAll();
+			this.log();
+
+			return true;
+		},
 	};
 
 	return isSpamClass;
@@ -59,14 +74,12 @@ const isSpam = async function isSpam(
 ) {
 	const isSpamInstance = new isSpamClass(content);
 
-	isSpamInstance.urlsFromContent();
-	// await isSpamInstance.req();
-	isSpamInstance.log();
+	isSpamInstance.check();
 };
 
 isSpam(
 	`
-http://test.com https://testsetset.setestset.setsetst.com
+	https://moiming.page.link/exam?_imcp=1
 
 adfadsfsd
 fsf
@@ -78,3 +91,5 @@ fa
 http://@@#:w
 `
 );
+
+// http://test.com https://testsetset.setestset.setsetst.com
