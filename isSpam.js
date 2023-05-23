@@ -16,10 +16,11 @@ const isSpamClass = (function () {
 	isSpamClass.prototype = {
 		constructor: isSpamClass,
 
-		log() {},
-
 		async req(url, follow = 0) {
-			// manually redirect
+			// spam check
+			this.isSpam(url);
+
+			// manually redirect option
 			const request = new Request(url, {
 				redirect: "manual",
 			});
@@ -28,9 +29,6 @@ const isSpamClass = (function () {
 				.then((res) => {
 					console.log("fetch with" + follow);
 					const nextUrl = res.headers.get("Location");
-
-					// nextUrl isSpam
-					this.isSpam(nextUrl);
 
 					return (res.status === 302 || res.status === 301) &&
 						follow < this.redirectionDepth
@@ -44,7 +42,7 @@ const isSpamClass = (function () {
 		},
 
 		isSpam(url) {
-			const domain = new URL(url).domain;
+			const domain = new URL(url).host;
 
 			if (this.spamLinkDomains.includes(domain)) this.result = true;
 		},
@@ -72,9 +70,8 @@ const isSpamClass = (function () {
 		async check() {
 			this.urlsFromContent();
 			await this.reqAll();
-			this.log();
 
-			return true;
+			return this.result;
 		},
 	};
 
@@ -92,7 +89,7 @@ const isSpam = async function isSpam(
 		redirectionDepth
 	);
 
-	isSpamInstance.check();
+	isSpamInstance.check().then(console.log);
 };
 
 isSpam(
@@ -108,7 +105,7 @@ fa
 
 http://@@#:w
 `,
-	["www.naver.com"],
+	["moiming.page.link"],
 	1
 );
 
