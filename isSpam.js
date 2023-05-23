@@ -1,7 +1,11 @@
 import fetch, { Request } from "node-fetch";
 
 const isSpamClass = (function () {
-	function isSpamClass(content, spamLinkDomains, redirectionDepth) {
+	function isSpamClass(
+		content = "",
+		spamLinkDomains = [],
+		redirectionDepth = 0
+	) {
 		this.content = content;
 		this.spamLinkDomains = spamLinkDomains;
 		this.redirectionDepth = redirectionDepth;
@@ -12,23 +16,26 @@ const isSpamClass = (function () {
 	isSpamClass.prototype = {
 		constructor: isSpamClass,
 
-		log() {
-			console.log(this.hasNext);
-			console.log(this.data);
-			console.log(this.urls);
-		},
+		log() {},
 
 		async req(url, follow = 0) {
 			// manually redirect
-			const request = new Request(url, { redirect: follow });
-			// hasNext:boolean, nextUrl: string, data: string
-			const isSpamData = [];
+			const request = new Request(url, {
+				redirect: "manual",
+			});
 
 			return fetch(request)
 				.then((res) => {
-					isSpamData.push(res.status === 302 || res.status === 301);
-					console.log(res.body);
-					return res.text();
+					console.log("fetch with" + follow);
+					const nextUrl = res.headers.get("Location");
+
+					// nextUrl isSpam
+					this.isSpam(nextUrl);
+
+					return (res.status === 302 || res.status === 301) &&
+						follow < this.redirectionDepth
+						? this.req(nextUrl, follow + 1)
+						: res.text();
 				})
 				.then((text) => {
 					this.data = text;
@@ -36,7 +43,14 @@ const isSpamClass = (function () {
 				});
 		},
 
+		isSpam(url) {
+			const domain = new URL(url).domain;
+
+			if (this.spamLinkDomains.includes(domain)) this.result = true;
+		},
+
 		async reqAll() {
+			console.log(this.urls);
 			return Promise.all(this.urls.map((v) => this.req(v)));
 		},
 
@@ -72,7 +86,11 @@ const isSpam = async function isSpam(
 	spamLinkDomains,
 	redirectionDepth
 ) {
-	const isSpamInstance = new isSpamClass(content);
+	const isSpamInstance = new isSpamClass(
+		content,
+		spamLinkDomains,
+		redirectionDepth
+	);
 
 	isSpamInstance.check();
 };
@@ -89,7 +107,9 @@ asd
 fa
 
 http://@@#:w
-`
+`,
+	["www.naver.com"],
+	1
 );
 
 // http://test.com https://testsetset.setestset.setsetst.com
