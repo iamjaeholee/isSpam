@@ -6,6 +6,7 @@ const isSpamClass = (function () {
 		this.spamLinkDomains = spamLinkDomains;
 		this.redirectionDepth = redirectionDepth;
 		this.hasNext = false;
+		this.urlRegex = new RegExp("http(s?)\\:\\/\\/\\S+", "g");
 	}
 
 	isSpamClass.prototype = {
@@ -14,6 +15,7 @@ const isSpamClass = (function () {
 		log() {
 			console.log(this.hasNext);
 			console.log(this.data);
+			console.log(this.urls);
 		},
 
 		async req() {
@@ -30,6 +32,21 @@ const isSpamClass = (function () {
 					return this.data;
 				});
 		},
+
+		urlsFromContent() {
+			this.urls = this.content
+				.match(this.urlRegex)
+				.filter((v) => this.isValidUrl(v));
+		},
+
+		isValidUrl(string) {
+			try {
+				new URL(string);
+				return true;
+			} catch (err) {
+				return false;
+			}
+		},
 	};
 
 	return isSpamClass;
@@ -42,8 +59,22 @@ const isSpam = async function isSpam(
 ) {
 	const isSpamInstance = new isSpamClass(content);
 
-	await isSpamInstance.req();
+	isSpamInstance.urlsFromContent();
+	// await isSpamInstance.req();
 	isSpamInstance.log();
 };
 
-isSpam("https://moiming.page.link/exam?_imcp=1");
+isSpam(
+	`
+http://test.com https://testsetset.setestset.setsetst.com
+
+adfadsfsd
+fsf
+
+sf
+asd
+fa
+
+http://@@#:w
+`
+);
