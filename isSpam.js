@@ -1,30 +1,49 @@
 import fetch, { Request } from "node-fetch";
 
-const isSpam = (function () {
-	function isSpam(content, spamLinkDomains, redirectionDepth) {
+const isSpamClass = (function () {
+	function isSpamClass(content, spamLinkDomains, redirectionDepth) {
 		this.content = content;
 		this.spamLinkDomains = spamLinkDomains;
 		this.redirectionDepth = redirectionDepth;
+		this.hasNext = false;
 	}
 
-	isSpam.prototype = {
-		constructor: isSpam,
+	isSpamClass.prototype = {
+		constructor: isSpamClass,
 
-		test() {
-			// const request = new Request(content, { redirect: "manual" });
-			const request = new Request(this.content);
+		log() {
+			console.log(this.hasNext);
+			console.log(this.data);
+		},
 
-			fetch(request)
+		async req() {
+			// manually redirect
+			const request = new Request(this.content, { redirect: "manual" });
+
+			return fetch(request)
 				.then((res) => {
-					console.log(res.status);
-					return res;
+					if (res.status === 302 || res.tatus === 301) this.hasNext = true;
+					return res.text();
 				})
-				.then((res) => res.text())
-				.then(console.log);
+				.then((text) => {
+					this.data = text;
+					return this.data;
+				});
 		},
 	};
 
-	return isSpam;
+	return isSpamClass;
 })();
 
-new isSpam("https://moiming.page.link/exam?_imcp=1").test();
+const isSpam = async function isSpam(
+	content,
+	spamLinkDomains,
+	redirectionDepth
+) {
+	const isSpamInstance = new isSpamClass(content);
+
+	await isSpamInstance.req();
+	isSpamInstance.log();
+};
+
+isSpam("https://moiming.page.link/exam?_imcp=1");
